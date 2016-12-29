@@ -1,0 +1,155 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-static-app
+  labels:
+    app: test-static-app
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    protocol: TCP
+    nodePort: 30080
+    name: external
+  selector:
+    app: test-static-app
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "test-static-app"
+  labels:
+    app: "test-static-app"
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        service: "test-static-app"
+        name: "test-static-app"
+        app: "test-static-app"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"        
+    spec:
+      containers:
+        - name: "test-static-app"
+          image: "larsks/thttpd:latest"
+          ports:
+            - containerPort: 80
+          args: ["-d","/content"]
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - mountPath: "/content"
+              name: content-volume
+      volumes:
+        - configMap:
+            name: test-static-app-config
+          name: content-volume          
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-static-app-config
+data:
+  metrics: |
+    # HELP jvm_memory_bytes_used Used bytes of a given JVM memory area.
+    # TYPE jvm_memory_bytes_used gauge
+    jvm_memory_bytes_used{area="heap",} 3.7592352E7
+    jvm_memory_bytes_used{area="nonheap",} 1.38552E7
+    # HELP jvm_memory_bytes_committed Committed (bytes) of a given JVM memory area.
+    # TYPE jvm_memory_bytes_committed gauge
+    jvm_memory_bytes_committed{area="heap",} 2.57425408E8
+    jvm_memory_bytes_committed{area="nonheap",} 1.4614528E7
+    # HELP jvm_memory_bytes_max Max (bytes) of a given JVM memory area.
+    # TYPE jvm_memory_bytes_max gauge
+    jvm_memory_bytes_max{area="heap",} 3.79584512E9
+    jvm_memory_bytes_max{area="nonheap",} -1.0
+    # HELP jvm_memory_pool_bytes_used Used bytes of a given JVM memory pool.
+    # TYPE jvm_memory_pool_bytes_used gauge
+    jvm_memory_pool_bytes_used{pool="Code Cache",} 3070976.0
+    jvm_memory_pool_bytes_used{pool="Metaspace",} 9643400.0
+    jvm_memory_pool_bytes_used{pool="Compressed Class Space",} 1140824.0
+    jvm_memory_pool_bytes_used{pool="PS Eden Space",} 3.7592352E7
+    jvm_memory_pool_bytes_used{pool="PS Survivor Space",} 0.0
+    jvm_memory_pool_bytes_used{pool="PS Old Gen",} 0.0
+    # HELP jvm_memory_pool_bytes_committed Committed bytes of a given JVM memory pool.
+    # TYPE jvm_memory_pool_bytes_committed gauge
+    jvm_memory_pool_bytes_committed{pool="Code Cache",} 3080192.0
+    jvm_memory_pool_bytes_committed{pool="Metaspace",} 1.0223616E7
+    jvm_memory_pool_bytes_committed{pool="Compressed Class Space",} 1310720.0
+    jvm_memory_pool_bytes_committed{pool="PS Eden Space",} 6.7108864E7
+    jvm_memory_pool_bytes_committed{pool="PS Survivor Space",} 1.1010048E7
+    jvm_memory_pool_bytes_committed{pool="PS Old Gen",} 1.79306496E8
+    # HELP jvm_memory_pool_bytes_max Max bytes of a given JVM memory pool.
+    # TYPE jvm_memory_pool_bytes_max gauge
+    jvm_memory_pool_bytes_max{pool="Code Cache",} 2.5165824E8
+    jvm_memory_pool_bytes_max{pool="Metaspace",} -1.0
+    jvm_memory_pool_bytes_max{pool="Compressed Class Space",} 1.073741824E9
+    jvm_memory_pool_bytes_max{pool="PS Eden Space",} 1.400897536E9
+    jvm_memory_pool_bytes_max{pool="PS Survivor Space",} 1.1010048E7
+    jvm_memory_pool_bytes_max{pool="PS Old Gen",} 2.84688384E9
+    # HELP test_java_app_nmsp_subs_counter_0_total Custom counter metric no. 0
+    # TYPE test_java_app_nmsp_subs_counter_0_total counter
+    test_java_app_nmsp_subs_counter_0_total{label1="value1",} 4.0
+    # HELP jvm_threads_current Current thread count of a JVM
+    # TYPE jvm_threads_current gauge
+    jvm_threads_current 20.0
+    # HELP jvm_threads_daemon Daemon thread count of a JVM
+    # TYPE jvm_threads_daemon gauge
+    jvm_threads_daemon 4.0
+    # HELP jvm_threads_peak Peak thread count of a JVM
+    # TYPE jvm_threads_peak gauge
+    jvm_threads_peak 20.0
+    # HELP jvm_threads_started_total Started thread count of a JVM
+    # TYPE jvm_threads_started_total counter
+    jvm_threads_started_total 21.0
+    # HELP jvm_classes_loaded The number of classes that are currently loaded in the JVM
+    # TYPE jvm_classes_loaded gauge
+    jvm_classes_loaded 1638.0
+    # HELP jvm_classes_loaded_total The total number of classes that have been loaded since the JVM has started execution
+    # TYPE jvm_classes_loaded_total counter
+    jvm_classes_loaded_total 1638.0
+    # HELP jvm_classes_unloaded_total The total number of classes that have been unloaded since the JVM has started execution
+    # TYPE jvm_classes_unloaded_total counter
+    jvm_classes_unloaded_total 0.0
+    # HELP test_java_app_nmsp_subs_gauge_0_current Custom gauge metric no. 0
+    # TYPE test_java_app_nmsp_subs_gauge_0_current gauge
+    test_java_app_nmsp_subs_gauge_0_current{label1="value1",} 0.0
+    # HELP jvm_gc_collection_seconds Time spent in a given JVM garbage collector in seconds.
+    # TYPE jvm_gc_collection_seconds summary
+    jvm_gc_collection_seconds_count{gc="PS Scavenge",} 0.0
+    jvm_gc_collection_seconds_sum{gc="PS Scavenge",} 0.0
+    jvm_gc_collection_seconds_count{gc="PS MarkSweep",} 0.0
+    jvm_gc_collection_seconds_sum{gc="PS MarkSweep",} 0.0
+    # HELP test_java_app_nmsp_subs_histogram_0_bytes Custom histogram metric no. 0
+    # TYPE test_java_app_nmsp_subs_histogram_0_bytes histogram
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.005",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.01",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.025",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.05",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.075",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.1",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.25",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.5",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="0.75",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="1.0",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="2.5",} 0.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="5.0",} 1.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="7.5",} 1.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="10.0",} 1.0
+    test_java_app_nmsp_subs_histogram_0_bytes_bucket{label1="value2",le="+Inf",} 1.0
+    test_java_app_nmsp_subs_histogram_0_bytes_count{label1="value2",} 1.0
+    test_java_app_nmsp_subs_histogram_0_bytes_sum{label1="value2",} 3.0
+    # HELP test_java_app_nmsp_subs_summary_0_bytes Custom summary metric no. 0
+    # TYPE test_java_app_nmsp_subs_summary_0_bytes summary
+    test_java_app_nmsp_subs_summary_0_bytes_count{label1="value1",} 1.0
+    test_java_app_nmsp_subs_summary_0_bytes_sum{label1="value1",} 0.0
+    # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+    # TYPE process_cpu_seconds_total counter
+    process_cpu_seconds_total 1.390625
+    # HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+    # TYPE process_start_time_seconds gauge
+    process_start_time_seconds 1.482942164743E9
