@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>balon</groupId>
+    <artifactId>monitoring-test-java-app</artifactId>
+    <packaging>jar</packaging>
+    <name>monitoring-test-java-app</name>
+    <version>1.0.0-SNAPSHOT</version>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+        </license>
+    </licenses>
+
+    <properties>
+        <main-class>balon.Boot</main-class>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.src.version>1.8</project.build.src.version>
+        <project.build.target.version>1.8</project.build.target.version>
+        <project.build.compiler.version>1.8</project.build.compiler.version>
+
+        <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
+        <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+        <maven-exec-plugin.version>1.1</maven-exec-plugin.version>
+
+        <maven-eclipse-plugin.version>2.9</maven-eclipse-plugin.version>
+        <maven-build-helper-plugin.version>1.9.1</maven-build-helper-plugin.version>
+        <maven-docker-plugin.version>0.3.2</maven-docker-plugin.version>
+        <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+        <maven-license-plugin.version>1.8</maven-license-plugin.version>
+
+        <!-- Logging -->
+        <slf4j.version>1.7.7</slf4j.version>
+        <logback.version>1.1.6</logback.version>
+
+    </properties>
+
+    <dependencies>
+        <dependency>
+		    <groupId>org.eclipse.jetty</groupId>
+		    <artifactId>jetty-servlet</artifactId>
+		    <version>9.4.0.v20161208</version>
+		</dependency>
+		<dependency>
+		    <groupId>io.prometheus</groupId>
+		    <artifactId>simpleclient_servlet</artifactId>
+		    <version>0.0.19</version>
+		</dependency>
+		<dependency>
+		    <groupId>io.prometheus</groupId>
+		    <artifactId>simpleclient_hotspot</artifactId>
+		    <version>0.0.19</version>
+		</dependency>
+    
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <!-- Download source code in Eclipse, best practice -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+                <version>${maven-eclipse-plugin.version}</version>
+                <configuration>
+                    <downloadSources>true</downloadSources>
+                    <downloadJavadocs>false</downloadJavadocs>
+                </configuration>
+            </plugin>
+
+            <!-- Set a compiler level -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <compilerVersion>${project.build.src.version}</compilerVersion>
+                    <source>${project.build.src.version}</source>
+                    <target>${project.build.target.version}</target>
+                </configuration>
+            </plugin>
+            <!-- Make it executable from maven -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${maven-exec-plugin.version}</version>
+                <configuration>
+                    <mainClass>${main-class}</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Make this jar executable -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <useUniqueVersions>false</useUniqueVersions>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>balon.Boot</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Copy deps to pack them later into docker -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-dependency-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <excludeScope>provided</excludeScope>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Dockerize app -->
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${maven-docker-plugin.version}</version>
+                <configuration>
+                    <baseImage>otechlabs/java8:60.27</baseImage>
+                    <imageName>balon/${project.artifactId}:${project.version}</imageName>
+                    <entryPoint>[ "java", "-jar", "/opt/app/${project.build.finalName}.jar" ]</entryPoint>
+                    <exposes>
+                        <expose>8080</expose> <!-- HTTP -->
+                    </exposes>
+                    <resources>
+                        <resource>
+                            <targetPath>/opt/app</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                        <resource>
+                            <targetPath>/opt/app/lib</targetPath>
+                            <directory>${project.build.directory}/lib</directory>
+                            <include>*.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
