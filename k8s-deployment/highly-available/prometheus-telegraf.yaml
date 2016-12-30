@@ -172,7 +172,7 @@ data:
         target_label: __address__
       - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
-      - source_labels: [__meta_kubernetes_pod_namespace]
+      - source_labels: [__meta_kubernetes_namespace]
         action: replace
         target_label: kubernetes_namespace
       - source_labels: [__meta_kubernetes_pod_name]
@@ -204,7 +204,7 @@ data:
     #
     # Global tags can be specified here in key="value" format.
     [global_tags]
-        dc="minikube"
+        k8s_cluster="minikube"
     # Configuration for telegraf agent
     [agent]
         ## Default data collection interval for all inputs
