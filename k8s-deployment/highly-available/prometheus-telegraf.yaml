@@ -37,11 +37,11 @@ spec:
           image: quay.io/prometheus/prometheus:v1.4.1
           imagePullPolicy: "Always"
           command:
-          - "/bin/prometheus"
+            - "/bin/prometheus"
           args:
-          - "-config.file=/etc/prometheus/prometheus.yml"
-          - "-storage.local.path=/prometheus"
-          - "-storage.local.retention=1h"
+            - "-config.file=/etc/prometheus/prometheus.yml"
+            - "-storage.local.path=/prometheus"
+            - "-storage.local.retention=1h"
           ports:
           - containerPort: 9090
             protocol: TCP
@@ -51,6 +51,11 @@ spec:
         - name: "telegraf"
           image: "telegraf:1.1.2"
           imagePullPolicy: "Always"
+          env:
+           - name: INFLUXDB_K8S_NAMESPACE  # In PoC we assume that influxdb is in the same k8s namespace as telegraf
+             valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace          
           volumeMounts:
             - mountPath: "/etc/telegraf"
               name: telegraf-config-volume
@@ -250,7 +255,7 @@ data:
         ## Multiple urls can be specified as part of the same cluster,
         ## this means that only ONE of the urls will be written to each interval.
         # urls = ["udp://localhost:8089"] # UDP endpoint example
-        urls = ["http://influxdb-0.influxdb-instances.default.svc.cluster.local:8086"] # required
+        urls = ["http://influxdb-0.influxdb-instances.$INFLUXDB_K8S_NAMESPACE.svc.cluster.local:8086"] # required
         ## The target database for metrics (telegraf will create it if not exists).
         database = "telegraf" # required
         ## Retention policy to write to. Empty string writes to the default rp.
@@ -278,7 +283,7 @@ data:
         ## Multiple urls can be specified as part of the same cluster,
         ## this means that only ONE of the urls will be written to each interval.
         # urls = ["udp://localhost:8089"] # UDP endpoint example
-        urls = ["http://influxdb-1.influxdb-instances.default.svc.cluster.local:8086"] # required
+        urls = ["http://influxdb-1.influxdb-instances.$INFLUXDB_K8S_NAMESPACE.svc.cluster.local:8086"] # required
         ## The target database for metrics (telegraf will create it if not exists).
         database = "telegraf" # required
         ## Retention policy to write to. Empty string writes to the default rp.
